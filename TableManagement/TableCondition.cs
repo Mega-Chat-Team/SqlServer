@@ -1,6 +1,6 @@
-﻿using System.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
-namespace MicrosoftSqlServer.TableManagement
+namespace SqlServer.TableManagement
 {
     public class TableCondition
     {
@@ -19,11 +19,7 @@ namespace MicrosoftSqlServer.TableManagement
         {
             SqlConditionString = $"{ColumnName} = @value_1";
 
-            SqlParameters = new List<SqlParameter>();
-
-            SqlParameter sqlParameter = new SqlParameter("@value_1", Value);
-
-            SqlParameters.Add(sqlParameter);
+            SqlParameters = [new("@value_1", Value)];
         }
 
         public static TableCondition operator |(TableCondition left, TableCondition right)
@@ -38,7 +34,7 @@ namespace MicrosoftSqlServer.TableManagement
             //Крутим параметры "правого" условия.
             foreach (SqlParameter rightSqlParameter in right.SqlParameters)
             {
-                string[] parametersNames = sqlParameters.Select(x => x.ParameterName).ToArray();
+                string[] parametersNames = [.. sqlParameters.Select(x => x.ParameterName)];
 
                 //Проверяем есть ли совпадение.
                 if (parametersNames.Contains(rightSqlParameter.ParameterName))
@@ -46,7 +42,7 @@ namespace MicrosoftSqlServer.TableManagement
                     //Берём последную цифру в названиях параметров и увеличиваем её на 1.
                     int newNumber = sqlParameters.Max(x => int.Parse(x.ParameterName.Split('_')[1])) + 1;
 
-                    SqlParameter sqlParameter = new SqlParameter($"@value_{newNumber}", rightSqlParameter.Value);
+                    SqlParameter sqlParameter = new($"@value_{newNumber}", rightSqlParameter.Value);
 
                     sqlParameters.Add(sqlParameter);
 
@@ -55,7 +51,7 @@ namespace MicrosoftSqlServer.TableManagement
             }
 
             //Делаем итоговое условие, учитывая оператор OR.
-            return new TableCondition($"{leftConditionString} OR ({rightConditionString})", sqlParameters);
+            return new TableCondition($"({leftConditionString}) OR ({rightConditionString})", sqlParameters);
         }
 
         public static TableCondition operator &(TableCondition left, TableCondition right)
@@ -70,7 +66,7 @@ namespace MicrosoftSqlServer.TableManagement
             //Крутим параметры "правого" условия.
             foreach (SqlParameter rightSqlParameter in right.SqlParameters)
             {
-                string[] parametersNames = sqlParameters.Select(x => x.ParameterName).ToArray();
+                string[] parametersNames = [.. sqlParameters.Select(x => x.ParameterName)];
 
                 //Проверяем есть ли совпадение.
                 if (parametersNames.Contains(rightSqlParameter.ParameterName))
@@ -78,7 +74,7 @@ namespace MicrosoftSqlServer.TableManagement
                     //Берём последную цифру в названиях параметров и увеличиваем её на 1.
                     int newNumber = sqlParameters.Max(x => int.Parse(x.ParameterName.Split('_')[1])) + 1;
 
-                    SqlParameter sqlParameter = new SqlParameter($"@value_{newNumber}", rightSqlParameter.Value);
+                    SqlParameter sqlParameter = new($"@value_{newNumber}", rightSqlParameter.Value);
 
                     sqlParameters.Add(sqlParameter);
 

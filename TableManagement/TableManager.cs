@@ -1,7 +1,7 @@
-﻿using System.Data.SqlClient;
-using MicrosoftSqlServer.Client;
+﻿using Microsoft.Data.SqlClient;
+using SqlServer.Client;
 
-namespace MicrosoftSqlServer.TableManagement
+namespace SqlServer.TableManagement
 {
     public class TableManager
     {
@@ -21,59 +21,54 @@ namespace MicrosoftSqlServer.TableManagement
             tableName = TableName;
         }
 
-        public TableValue GetValue(string ColumnName, TableCondition Condition)
+        public TableValue? GetValue(string ColumnName, TableCondition Condition)
         {
             string query = $"SELECT {ColumnName} FROM {tableName} WHERE {Condition.SqlConditionString}";
 
-            using (SqlCommand command = sqlClient.CreateCommand(query))
+            using SqlCommand command = sqlClient.CreateCommand(query);
+
+            command.Parameters.AddRange([.. Condition.SqlParameters]);
+
+            if (command.ExecuteScalar() != null)
             {
-                command.Parameters.AddRange(Condition.SqlParameters.ToArray());
-
-                if (command.ExecuteScalar() != null)
-                {
-                    return new TableValue(ColumnName, command.ExecuteScalar());
-                }
-
-                return null;
+                return new TableValue(ColumnName, command.ExecuteScalar());
             }
+
+            return null;
         }
 
         public TableValue[] GetValues(string ColumnName, TableCondition Condition)
         {
             string query = $"SELECT {ColumnName} FROM {tableName} WHERE {Condition.SqlConditionString}";
 
-            using (SqlCommand command = sqlClient.CreateCommand(query))
+            using SqlCommand command = sqlClient.CreateCommand(query);
+
+            command.Parameters.AddRange([.. Condition.SqlParameters]);
+
+            using SqlDataReader reader = command.ExecuteReader();
+
+            List<TableValue> Values = [];
+
+            while (reader.Read())
             {
-                command.Parameters.AddRange(Condition.SqlParameters.ToArray());
+                TableValue Value = new(ColumnName, reader.GetValue(0));
 
-                using (SqlDataReader reader = command.ExecuteReader())
-                {
-                    List<TableValue> Values = new List<TableValue>();
-
-                    while (reader.Read())
-                    {
-                        TableValue Value = new TableValue(ColumnName, reader.GetValue(0));
-
-                        Values.Add(Value);
-                    }
-
-                    return Values.ToArray();
-                }
+                Values.Add(Value);
             }
+
+            return [.. Values];
         }
 
         public void SetValue(string ColumnName, TableCondition Condition, object Value)
         {
             string query = $"UPDATE {tableName} SET {ColumnName} = @value WHERE {Condition.SqlConditionString}";
 
-            using (SqlCommand command = sqlClient.CreateCommand(query))
-            {
-                command.Parameters.AddWithValue($"@value", Value);
+            using SqlCommand command = sqlClient.CreateCommand(query);
 
-                command.Parameters.AddRange(Condition.SqlParameters.ToArray());
+            command.Parameters.AddWithValue($"@value", Value);
+            command.Parameters.AddRange([.. Condition.SqlParameters]);
 
-                command.ExecuteNonQuery();
-            }
+            command.ExecuteNonQuery();
         }
 
         public void AddRow(TableRow Row)
@@ -91,27 +86,25 @@ namespace MicrosoftSqlServer.TableManagement
 
             string query = $"INSERT INTO {tableName} ({columns}) VALUES ({values})";
 
-            using (SqlCommand command = sqlClient.CreateCommand(query))
-            {
-                for (int i = 0; i < RowValues.Length; i++)
-                {
-                    command.Parameters.AddWithValue($"@value_{i}", RowValues[i].Value);
-                }
+            using SqlCommand command = sqlClient.CreateCommand(query);
 
-                command.ExecuteNonQuery();
+            for (int i = 0; i < RowValues.Length; i++)
+            {
+                command.Parameters.AddWithValue($"@value_{i}", RowValues[i].Value);
             }
+
+            command.ExecuteNonQuery();
         }
 
         public void DeleteRow(TableCondition Condition)
         {
             string query = $"DELETE FROM {tableName} WHERE {Condition.SqlConditionString}";
 
-            using (SqlCommand command = sqlClient.CreateCommand(query))
-            {
-                command.Parameters.AddRange(Condition.SqlParameters.ToArray());
+            using SqlCommand command = sqlClient.CreateCommand(query);
 
-                command.ExecuteNonQuery();
-            }
+            command.Parameters.AddRange([.. Condition.SqlParameters]);
+
+            command.ExecuteNonQuery();
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿using System.Data.SqlClient;
+﻿using Microsoft.Data.SqlClient;
 
-namespace MicrosoftSqlServer.TableManagement
+namespace SqlServer.TableManagement
 {
     public class TableValue
     {
@@ -10,7 +10,6 @@ namespace MicrosoftSqlServer.TableManagement
         public TableValue(string columnName, object value)
         {
             ColumnName = columnName;
-
             Value = value;
         }
 
@@ -18,29 +17,25 @@ namespace MicrosoftSqlServer.TableManagement
         {
             string ConditionString = $"{left.ColumnName} = @value_1 OR {right.ColumnName} = @value_2";
 
-            SqlParameter[] sqlParameters = new SqlParameter[] { new SqlParameter("@value_1", left.Value), new SqlParameter("@value_2", right.Value) };
+            SqlParameter[] sqlParameters = [new SqlParameter("@value_1", left.Value), new SqlParameter("@value_2", right.Value)];
 
-            return new TableCondition(ConditionString, sqlParameters.ToList());
+            return new TableCondition(ConditionString, [.. sqlParameters]);
         }
 
         public static TableCondition operator &(TableValue left, TableValue right)
         {
             string ConditionString = $"{left.ColumnName} = @value_1 AND {right.ColumnName} = @value_2";
 
-            SqlParameter[] sqlParameters = new SqlParameter[] { new SqlParameter("@value_1", left.Value), new SqlParameter("@value_2", right.Value) };
+            SqlParameter[] sqlParameters = [new("@value_1", left.Value), new SqlParameter("@value_2", right.Value)];
 
-            return new TableCondition(ConditionString, sqlParameters.ToList());
+            return new TableCondition(ConditionString, [.. sqlParameters]);
         }
 
         public static implicit operator TableCondition(TableValue tableValue)
         {
             string SqlConditionString = $"{tableValue.ColumnName} = @value_1";
 
-            List<SqlParameter> SqlParameters = new List<SqlParameter>();
-
-            SqlParameter sqlParameter = new SqlParameter("@value_1", tableValue.Value);
-
-            SqlParameters.Add(sqlParameter);
+            List<SqlParameter> SqlParameters = [new("@value_1", tableValue.Value)];
 
             return new TableCondition(SqlConditionString, SqlParameters);
         }

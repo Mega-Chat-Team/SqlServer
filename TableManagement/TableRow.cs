@@ -1,4 +1,4 @@
-﻿namespace MicrosoftSqlServer.TableManagement
+﻿namespace SqlServer.TableManagement
 {
     public class TableRow
     {
@@ -11,7 +11,7 @@
 
         public TableRow(TableValue tableValue)
         {
-            Values = new TableValue[] { tableValue };
+            Values = [tableValue];
         }
     }
 }
